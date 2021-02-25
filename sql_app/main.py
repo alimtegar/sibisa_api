@@ -1,6 +1,8 @@
 from typing import List
 
 from fastapi import Depends, FastAPI, HTTPException
+from fastapi.middleware.wsgi import WSGIMiddleware
+
 from sqlalchemy.orm import Session
 
 from . import crud, models, schemas
@@ -37,3 +39,4 @@ def read_items(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
     items = crud.get_items(db, skip = skip, limit = limit)
     return items
 
+app.mount('/v1', WSGIMiddleware(app))
