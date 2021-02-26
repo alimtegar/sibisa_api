@@ -1,16 +1,41 @@
 from typing import List, Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
-class ItemBase(BaseModel):
-    title: str
-    description: Optional[str] = None
+# Test Question
+class TestQuestionBase(BaseModel):
+    question: str
 
-class ItemCreate(ItemBase):
-    pass
-
-class Item(ItemBase):
+class TestQuestion(TestQuestionBase):
     id: int
 
+    class Config:
+        orm_mode = True
+
+# Test Attempt
+class TestAttemptBase(BaseModel):
+    score: int
+    question_count: int = Field(..., gt=0)
+
+class TestAttemptCreate(TestAttemptBase):
+    pass
+
+class TestAttempt(TestAttemptBase):
+    id: int
+
+    class Config:
+        orm_mode = True
+
+# Attempted Test Question
+class AttemptedTestQuestionBase(BaseModel):
+    answer: str
+
+class AttemptedTestQuestion(AttemptedTestQuestionBase):
+    id: int
+    test_question_id: int
+    test_question: TestQuestion
+    test_attempt_id: int
+    test_attempt: TestAttempt
+    
     class Config:
         orm_mode = True
