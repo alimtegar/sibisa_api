@@ -3,4 +3,5 @@ uvicorn
 pydantic
 sqlalchemy
 mysqlclient
+pymysql
 a2wsgi
