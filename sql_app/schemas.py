@@ -12,6 +12,22 @@ class TestQuestion(TestQuestionBase):
     class Config:
         orm_mode = True
 
+
+
+# Attempted Test Question
+class AttemptedTestQuestionBase(BaseModel):
+    answer: str
+
+class AttemptedTestQuestion(AttemptedTestQuestionBase):
+    id: int
+    test_question_id: int
+    test_question: TestQuestion
+    # test_attempt_id: int
+    # test_attempt: TestAttempt
+    
+    class Config:
+        orm_mode = True
+
 # Test Attempt
 class TestAttemptBase(BaseModel):
     score: int
@@ -22,20 +38,7 @@ class TestAttemptCreate(TestAttemptBase):
 
 class TestAttempt(TestAttemptBase):
     id: int
+    attempted_test_questions: List[AttemptedTestQuestion]
 
-    class Config:
-        orm_mode = True
-
-# Attempted Test Question
-class AttemptedTestQuestionBase(BaseModel):
-    answer: str
-
-class AttemptedTestQuestion(AttemptedTestQuestionBase):
-    id: int
-    test_question_id: int
-    test_question: TestQuestion
-    test_attempt_id: int
-    test_attempt: TestAttempt
-    
     class Config:
         orm_mode = True
