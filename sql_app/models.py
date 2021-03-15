@@ -1,8 +1,9 @@
-import enum
+
 from sqlalchemy import Boolean, Column, ForeignKey, Integer, String, Enum
 from sqlalchemy.orm import relationship
 
 from .database import Base
+from .schemas import Types
 
 # Test Question
 class TestQuestion(Base):
@@ -36,12 +37,6 @@ class AttemptedTestQuestion(Base):
     test_question = relationship('TestQuestion', back_populates = 'attempted_test_questions')
     test_attempt = relationship('TestAttempt', back_populates = 'attempted_test_questions')
 
-# Types
-class Types(enum.Enum):
-    SYMBOLS = 'symbols'
-    LETTERS = 'letters'
-    NUMBERS = 'numbers'
-
 # Stage
 class Stage(Base):
     __tablename__ = 'stages'
@@ -51,7 +46,6 @@ class Stage(Base):
     question_count = Column(Integer)
 
     questions = relationship('Question', back_populates = 'stage')
-    attempted_stages = relationship('AttemptedStage', back_populates = 'stage')
 
 # Question
 class Question(Base):
@@ -82,7 +76,7 @@ class AttemptedQuestion(Base):
     attempted_stage_id = Column(Integer, ForeignKey('attempted_stages.id'))
     question_id = Column(Integer, ForeignKey('questions.id'))
     answer = Column(String(255))
-    is_corrent = Column(Boolean)
+    is_correct = Column(Boolean)
 
     attempted_stage = relationship('AttemptedStage', back_populates = 'attempted_question')
     question = relationship('Question', back_populates = 'attempted_questions')
