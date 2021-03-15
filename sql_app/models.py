@@ -1,4 +1,5 @@
-from sqlalchemy import Boolean, Column, ForeignKey, Integer, String
+import enum
+from sqlalchemy import Boolean, Column, ForeignKey, Integer, String, Enum
 from sqlalchemy.orm import relationship
 
 from .database import Base
@@ -34,3 +35,54 @@ class AttemptedTestQuestion(Base):
 
     test_question = relationship('TestQuestion', back_populates = 'attempted_test_questions')
     test_attempt = relationship('TestAttempt', back_populates = 'attempted_test_questions')
+
+# Types
+class Types(enum.Enum):
+    SYMBOLS = 'symbols'
+    LETTERS = 'letters'
+    NUMBERS = 'numbers'
+
+# Stage
+class Stage(Base):
+    __tablename__ = 'stages'
+
+    id = Column(Integer, primary_key = True, index = True)
+    type = Column(Enum(Types))
+    question_count = Column(Integer)
+
+    questions = relationship('Question', back_populates = 'stage')
+    attempted_stages = relationship('AttemptedStage', back_populates = 'stage')
+
+# Question
+class Question(Base):
+    __tablename__ = 'questions'
+
+    id = Column(Integer, primary_key = True, index = True)
+    stage_id = Column(Integer, ForeignKey('stages.id'))
+    question = Column(String(8))
+
+    stage = relationship('Stage', back_populates = 'questions')
+
+# Attempted Stage
+class AttemptedStage(Base):
+    __tablename__ = 'attempted_stages'
+
+    id = Column(Integer, primary_key = True, index = True)
+    stage_id = Column(Integer, ForeignKey('stages.id'))
+    score = Column(Integer)
+
+    stage = relationship('Stage', back_populates = 'attempted_stages')
+    attempted_questions = relationship('AttemptedQuestion', back_populates = 'attempted_stage')
+
+# Attempted Question
+class AttemptedQuestion(Base):
+    __tablename__ = 'attempted_questions'
+
+    id = Column(Integer, primary_key = True, index = True)
+    attempted_stage_id = Column(Integer, ForeignKey('attempted_stages.id'))
+    question_id = Column(Integer, ForeignKey('questions.id'))
+    answer = Column(String(255))
+    is_corrent = Column(Boolean)
+
+    attempted_stage = relationship('AttemptedStage', back_populates = 'attempted_question')
+    question = relationship('Question', back_populates = 'attempted_questions')
