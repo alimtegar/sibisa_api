@@ -35,13 +35,16 @@ class Stage(StageBase):
 
 # Attempted Question
 class AttemptedQuestionBase(BaseModel):
+    attempted_stage_id: int
+    question_id: int
     answer: str
     is_correct: bool
 
+class AttemptedQuestionCreate(AttemptedQuestionBase):
+    pass
+
 class AttemptedQuestion(AttemptedQuestionBase):
     id: int
-    attempted_stage_id: int
-    question_id: int
     question: Question
     
     class Config:
@@ -49,10 +52,15 @@ class AttemptedQuestion(AttemptedQuestionBase):
 
 # Attempted Stage
 class AttemptedStageBase(BaseModel):
-    score: int = Field(..., gt=0)
+    score: Optional[int]
+    stage_id: int
+
+class AttemptedStageCreate(AttemptedStageBase):
+    pass
 
 class AttemptedStage(AttemptedStageBase):
     id: int
+    
     stage: Stage
     attempted_questions: List[AttemptedQuestion]
     

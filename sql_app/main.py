@@ -50,6 +50,11 @@ def read_stages(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
 def read_stages_by_type(type: str, skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
     stages = crud.get_stages_by_type(db, type, skip, limit)
     return stages
+
+@app.post('/attempted_stages/')
+def create_attempted_stage(attempted_stage: schemas.AttemptedStageCreate, db: Session = Depends(get_db)):
+    stage = crud.create_attempted_stage(db, attempted_stage, id, type)
+    return stage
     
 # @app.get('/stages/{type}/{id}', response_model = schemas.Stage)
 # def read_stage(id: int, type: str, db: Session = Depends(get_db)):

@@ -1,4 +1,5 @@
 from typing import List
+from random import shuffle
 
 from fastapi import HTTPException
 
@@ -14,6 +15,45 @@ def get_stages(db:Session, skip: int = 0, limit: int = 100):
 
 def get_stages_by_type(db:Session, type: str, skip: int = 0, limit: int = 100):
     return db.query(models.Stage).filter(models.Stage.type == type).offset(skip).limit(limit).all()
+
+def create_attempted_stage(db: Session, attempted_stage: schemas.AttemptedStageCreate, id: int, type: str):
+    questions = db.query(models.Question).filter(models.Question.stage_id == attempted_stage.stage_id)
+
+    if questions.count() == 0:
+        raise HTTPException(status_code = 404, detail = "Questions are empty")
+
+    db_attempted_stage = models.AttemptedStage(**attempted_stage.dict())
+
+    # Create attempted stage
+    db.add(db_attempted_stage)
+    db.commit()
+    # db.refresh(db_attempted_stage)
+
+    if db_attempted_stage.id:
+        db_attempted_questions = [
+            models.AttemptedQuestion(
+                attempted_stage_id = db_attempted_stage.id,
+                question_id = question.id)
+                for question in questions.all()]
+        db_attempted_questions_random = [
+            models.AttemptedQuestion(
+                attempted_stage_id = db_attempted_stage.id,
+                question_id = question.id)
+                for question in questions.all()]
+
+        shuffle(db_attempted_questions_random)
+
+        db_attempted_questions += db_attempted_questions_random
+                
+        # Create attempted test questions
+        db.add_all(db_attempted_questions)
+        db.commit()
+        # db.refresh(db_attempted_questions)
+        db.refresh(db_attempted_stage)
+
+        return db_attempted_stage
+    else:
+        raise HTTPException(status_code = 500, detail = "Failed to create attempted stage")
 
 # def get_stage(db:Session, id: int, type: str):
 #     return db.query(models.Stage).filter(and_(models.Stage.id == id, models.Stage.type == type)).first()
