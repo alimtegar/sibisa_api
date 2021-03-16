@@ -37,8 +37,8 @@ class Stage(StageBase):
 class AttemptedQuestionBase(BaseModel):
     attempted_stage_id: int
     question_id: int
-    answer: str
-    is_correct: bool
+    answer: Optional[str]
+    is_correct: Optional[bool]
 
 class AttemptedQuestionCreate(AttemptedQuestionBase):
     pass
