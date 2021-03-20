@@ -41,29 +41,29 @@ def read_root():
     return {'Hello': 'World'}
 
 # Stage
-@app.get('/stages/', response_model = List[schemas.Stage])
-def read_stages(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
-    stages = crud.get_stages(db, skip, limit)
+# @app.get('/stages/', response_model = List[schemas.Stage])
+# def read_stages(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+#     stages = crud.get_stages(db = db, skip = skip, limit =  limit)
+#     return stages
+
+@app.get('/stages/category/{category}', response_model = List[schemas.Stage])
+def read_stages_by_category(category: str, skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+    stages = crud.get_stages(db = db, category = category, skip = skip, limit = limit)
     return stages
 
-@app.get('/stages/{type}', response_model = List[schemas.Stage])
-def read_stages_by_type(type: str, skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
-    stages = crud.get_stages_by_type(db, type, skip, limit)
-    return stages
-
-@app.post('/attempted_stages/', response_model = schemas.AttemptedStage)
+@app.post('/attempted-stages/', response_model = schemas.AttemptedStage)
 def create_attempted_stage(attempted_stage: schemas.AttemptedStageCreate, db: Session = Depends(get_db)):
-    attempted_stage = crud.create_attempted_stage(db, attempted_stage, id, type)
+    attempted_stage = crud.create_attempted_stage(db, attempted_stage, id)
     return attempted_stage
 
-@app.get('/attempted_stages/{id}/{page}', response_model = schemas.AttemptedQuestion)
-def get_attempted_question(id: int, page: int = Path(1, gt = 0), db: Session = Depends(get_db)):
-    attempted_stage = crud.get_attempted_question(db, id, page)
-    return attempted_stage
+@app.get('/attempted-stages/{id}/attempted-questions/n/{n}', response_model = schemas.AttemptedQuestion)
+def read_attempted_stage_question(id: int, n: int = Path(1, gt = 0), db: Session = Depends(get_db)):
+    attempted_question = crud.get_attempted_question(db, id, n)
+    return attempted_question
     
-# @app.get('/stages/{type}/{id}', response_model = schemas.Stage)
-# def read_stage(id: int, type: str, db: Session = Depends(get_db)):
-#     stage = crud.get_stage(db, id, type)
+# @app.get('/stages/{category}/{id}', response_model = schemas.Stage)
+# def read_stage(id: int, category: str, db: Session = Depends(get_db)):
+#     stage = crud.get_stage(db, id, category)
 #     return stage
 
 # Test Question

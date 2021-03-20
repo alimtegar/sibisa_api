@@ -3,8 +3,8 @@ from typing import List, Optional
 
 from pydantic import BaseModel, Field
 
-# Types
-class Types(str, Enum):
+# Category
+class Category(str, Enum):
     symbols = 'symbols'
     letters = 'letters'
     numbers = 'numbers'
@@ -22,7 +22,7 @@ class Question(QuestionBase):
 
 # Stage
 class StageBase(BaseModel):
-    type: Types
+    category: Category
     question_count: int
 
 class Stage(StageBase):
@@ -61,8 +61,8 @@ class AttemptedStageCreate(AttemptedStageBase):
 class AttemptedStage(AttemptedStageBase):
     id: int
     
-    stage: Stage
-    attempted_questions: List[AttemptedQuestion]
+    # stage: Stage
+    # attempted_questions: List[AttemptedQuestion]
     
     class Config:
         orm_mode = True

@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional
 from random import shuffle
 
 from fastapi import HTTPException
@@ -10,13 +10,18 @@ from sqlalchemy.sql.expression import func
 from . import models, schemas
 
 # Stage
-def get_stages(db:Session, skip: int = 0, limit: int = 100):
-    return db.query(models.Stage).offset(skip).limit(limit).all()
+# def get_stages(db:Session, skip: int = 0, limit: int = 100):
+#     return db.query(models.Stage).offset(skip).limit(limit).all()
 
-def get_stages_by_type(db:Session, type: str, skip: int = 0, limit: int = 100):
-    return db.query(models.Stage).filter(models.Stage.type == type).offset(skip).limit(limit).all()
+def get_stages(db:Session, category: Optional[str] = None, skip: int = 0, limit: int = 100):
+    db_stages = db.query(models.Stage)
+    
+    if category:
+        db_stages = db_stages.filter(models.Stage.category == category)
+    
+    return db_stages.offset(skip).limit(limit).all()
 
-def create_attempted_stage(db: Session, attempted_stage: schemas.AttemptedStageCreate, id: int, type: str):
+def create_attempted_stage(db: Session, attempted_stage: schemas.AttemptedStageCreate, id: int):
     questions = db.query(models.Question).filter(models.Question.stage_id == attempted_stage.stage_id)
 
     if questions.count() == 0:
@@ -55,17 +60,17 @@ def create_attempted_stage(db: Session, attempted_stage: schemas.AttemptedStageC
     else:
         raise HTTPException(status_code = 500, detail = "Failed to create attempted stage")
 
-def get_attempted_question(db: Session, id: int, page: int):
+def get_attempted_question(db: Session, id: int, n: int):
     db_attempted_questions = db.query(models.AttemptedQuestion).filter(models.AttemptedQuestion.attempted_stage_id == id)
 
-    if db_attempted_questions.count() < page:
+    if db_attempted_questions.count() < n:
         raise HTTPException(status_code=404, detail="Attempted question is not found")
 
-    return db_attempted_questions[page-1]
+    return db_attempted_questions[n-1]
 
 
-# def get_stage(db:Session, id: int, type: str):
-#     return db.query(models.Stage).filter(and_(models.Stage.id == id, models.Stage.type == type)).first()
+# def get_stage(db:Session, id: int, category: str):
+#     return db.query(models.Stage).filter(and_(models.Stage.id == id, models.Stage.category == category)).first()
 
 # Test Question
 # def get_test_questions(db: Session, skip: int = 0, limit: int = 100):

@@ -3,7 +3,7 @@ from sqlalchemy import Boolean, Column, ForeignKey, Integer, String, Enum
 from sqlalchemy.orm import relationship
 
 from .database import Base
-from .schemas import Types
+from .schemas import Category
 
 # Stage
 class Stage(Base):
@@ -11,7 +11,7 @@ class Stage(Base):
 
     id = Column(Integer, primary_key = True, index = True)
     stage = Column(Integer, index = True)
-    type = Column(Enum(Types), index = True)
+    category = Column(Enum(Category), index = True)
     question_count = Column(Integer)
     
     questions = relationship('Question', back_populates = 'stage')
