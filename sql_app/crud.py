@@ -21,6 +21,12 @@ def get_stages(db:Session, category: Optional[str] = None, skip: int = 0, limit:
     
     return db_stages.offset(skip).limit(limit).all()
 
+# Attempted Stage
+def get_attempted_stage(db: Session, id: int):
+    db_attempted_stage = db.query(models.AttemptedStage).get(id)
+    
+    return db_attempted_stage
+
 def create_attempted_stage(db: Session, attempted_stage: schemas.AttemptedStageCreate, id: int):
     questions = db.query(models.Question).filter(models.Question.stage_id == attempted_stage.stage_id)
 
@@ -67,6 +73,8 @@ def get_attempted_question(db: Session, id: int, n: int):
         raise HTTPException(status_code=404, detail="Attempted question is not found")
 
     return db_attempted_questions[n-1]
+
+
 
 
 # def get_stage(db:Session, id: int, category: str):

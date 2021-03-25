@@ -22,8 +22,16 @@ class Question(QuestionBase):
 
 # Stage
 class StageBase(BaseModel):
+    stage: str
     category: Category
     question_count: int
+
+class StageProtected(StageBase):
+    pass
+
+    class Config:
+        orm_mode = True
+        # use_enum_values = True
 
 class Stage(StageBase):
     id: int
@@ -31,26 +39,19 @@ class Stage(StageBase):
     
     class Config:
         orm_mode = True
-        use_enum_values = True
+        # use_enum_values = True
 
-# Attempted Question
+# Attempted Stage
 class AttemptedQuestionBase(BaseModel):
-    attempted_stage_id: int
-    question_id: int
-    answer: Optional[str]
-    is_correct: Optional[bool]
+    answer: Optional[str]       # Updatable
+    is_correct: Optional[bool]  # Updatable
 
-class AttemptedQuestionCreate(AttemptedQuestionBase):
+class AttemptedQuestionProtected(AttemptedQuestionBase):
     pass
 
-class AttemptedQuestion(AttemptedQuestionBase):
-    id: int
-    question: Question
-    
     class Config:
         orm_mode = True
 
-# Attempted Stage
 class AttemptedStageBase(BaseModel):
     score: Optional[int]
     stage_id: int
@@ -58,11 +59,34 @@ class AttemptedStageBase(BaseModel):
 class AttemptedStageCreate(AttemptedStageBase):
     pass
 
+class AttemptedStageProtected(AttemptedStageBase):
+    stage: StageProtected
+
+    class Config:
+        orm_mode = True
+
 class AttemptedStage(AttemptedStageBase):
     id: int
     
-    # stage: Stage
-    # attempted_questions: List[AttemptedQuestion]
+    attempted_questions: List[AttemptedQuestionProtected] # For Score page
+    
+    class Config:
+        orm_mode = True
+
+# Attempted Question
+class AttemptedQuestionCreate(AttemptedQuestionBase):
+    attempted_stage_id: int
+    question_id: int 
+
+class AttemptedQuestionUpdate(AttemptedQuestionBase):
+    pass
+
+class AttemptedQuestion(AttemptedQuestionBase):
+    id: int
+    attempted_stage_id: int
+    attempted_stage: AttemptedStageProtected
+    question_id: int 
+    question: Question
     
     class Config:
         orm_mode = True

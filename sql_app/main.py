@@ -49,16 +49,26 @@ def read_root():
 @app.get('/stages/category/{category}', response_model = List[schemas.Stage])
 def read_stages_by_category(category: str, skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
     stages = crud.get_stages(db = db, category = category, skip = skip, limit = limit)
+
     return stages
+
+# Attempted Stage
+@app.get('/attempted-stages/{id}' , response_model = schemas.AttemptedStage)
+def read_attempted_stage(id: int, db: Session = Depends(get_db)):
+    attempted_stage = crud.get_attempted_stage(db, id)
+
+    return attempted_stage
 
 @app.post('/attempted-stages/', response_model = schemas.AttemptedStage)
 def create_attempted_stage(attempted_stage: schemas.AttemptedStageCreate, db: Session = Depends(get_db)):
     attempted_stage = crud.create_attempted_stage(db, attempted_stage, id)
+
     return attempted_stage
 
 @app.get('/attempted-stages/{id}/attempted-questions/n/{n}', response_model = schemas.AttemptedQuestion)
 def read_attempted_stage_question(id: int, n: int = Path(1, gt = 0), db: Session = Depends(get_db)):
     attempted_question = crud.get_attempted_question(db, id, n)
+
     return attempted_question
     
 # @app.get('/stages/{category}/{id}', response_model = schemas.Stage)
