@@ -44,10 +44,9 @@ class Stage(StageBase):
 # Attempted Stage
 class AttemptedQuestionBase(BaseModel):
     answer: Optional[str]       # Updatable
-    is_correct: Optional[bool]  # Updatable
 
 class AttemptedQuestionProtected(AttemptedQuestionBase):
-    pass
+    is_correct: Optional[bool]
 
     class Config:
         orm_mode = True
@@ -76,7 +75,8 @@ class AttemptedStage(AttemptedStageBase):
 # Attempted Question
 class AttemptedQuestionCreate(AttemptedQuestionBase):
     attempted_stage_id: int
-    question_id: int 
+    question_id: int
+    is_correct: Optional[bool]
 
 class AttemptedQuestionUpdate(AttemptedQuestionBase):
     pass

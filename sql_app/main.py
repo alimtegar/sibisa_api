@@ -70,6 +70,12 @@ def read_attempted_stage_question(id: int, n: int = Path(1, gt = 0), db: Session
     attempted_question = crud.get_attempted_question(db, id, n)
 
     return attempted_question
+
+@app.put('/attempted-questions/{id}')
+def update_attempted_stage_question(id: int, attempted_question: schemas.AttemptedQuestionUpdate, db: Session = Depends(get_db)):
+    attempted_question = crud.update_attempted_question(db, id, attempted_question)
+
+    return attempted_question
     
 # @app.get('/stages/{category}/{id}', response_model = schemas.Stage)
 # def read_stage(id: int, category: str, db: Session = Depends(get_db)):

@@ -66,6 +66,7 @@ def create_attempted_stage(db: Session, attempted_stage: schemas.AttemptedStageC
     else:
         raise HTTPException(status_code = 500, detail = "Failed to create attempted stage")
 
+# Attempted Question
 def get_attempted_question(db: Session, id: int, n: int):
     db_attempted_questions = db.query(models.AttemptedQuestion).filter(models.AttemptedQuestion.attempted_stage_id == id)
 
@@ -73,6 +74,21 @@ def get_attempted_question(db: Session, id: int, n: int):
         raise HTTPException(status_code=404, detail="Attempted question is not found")
 
     return db_attempted_questions[n-1]
+
+def update_attempted_question(db: Session, id: int, attempted_question: schemas.AttemptedQuestionUpdate):
+    db_attempted_question = db.query(models.AttemptedQuestion).get(id)
+    db_attempted_question.answer = attempted_question.answer
+    db_attempted_question.is_correct = db_attempted_question.question.question == attempted_question.answer
+
+    # if db_attempted_questions.count() < n:
+    #     raise HTTPException(status_code=404, detail="Attempted question is not found")
+
+    # db_attempted_question = db_attempted_questions[n-1].update(attempted_question)
+
+    db.commit()
+    db.refresh(db_attempted_question)
+
+    return db_attempted_question
 
 
 
