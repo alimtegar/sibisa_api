@@ -71,7 +71,7 @@ def read_attempted_stage_question(id: int, n: int = Path(1, gt = 0), db: Session
 
     return attempted_question
 
-@app.put('/attempted-questions/{id}')
+@app.put('/attempted-questions/{id}', response_model = schemas.AttemptedQuestionProtected)
 def update_attempted_stage_question(id: int, attempted_question: schemas.AttemptedQuestionUpdate, db: Session = Depends(get_db)):
     attempted_question = crud.update_attempted_question(db, id, attempted_question)
 

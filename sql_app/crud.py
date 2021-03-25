@@ -77,13 +77,15 @@ def get_attempted_question(db: Session, id: int, n: int):
 
 def update_attempted_question(db: Session, id: int, attempted_question: schemas.AttemptedQuestionUpdate):
     db_attempted_question = db.query(models.AttemptedQuestion).get(id)
+
+    if not db_attempted_question:
+        raise HTTPException(status_code=404, detail="Attempted question is not found")
+
+    if db_attempted_question.answer:
+        raise HTTPException(status_code=404, detail="Attempted question answer cannot be changed if it has been answered")
+
     db_attempted_question.answer = attempted_question.answer
     db_attempted_question.is_correct = db_attempted_question.question.question == attempted_question.answer
-
-    # if db_attempted_questions.count() < n:
-    #     raise HTTPException(status_code=404, detail="Attempted question is not found")
-
-    # db_attempted_question = db_attempted_questions[n-1].update(attempted_question)
 
     db.commit()
     db.refresh(db_attempted_question)
