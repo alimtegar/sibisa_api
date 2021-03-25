@@ -82,7 +82,7 @@ def update_attempted_question(db: Session, id: int, attempted_question: schemas.
         raise HTTPException(status_code=404, detail="Attempted question is not found")
 
     if db_attempted_question.answer:
-        raise HTTPException(status_code=404, detail="Attempted question answer cannot be changed if it has been answered")
+        raise HTTPException(status_code=423, detail="Attempted question answer cannot be changed if it has been answered")
 
     db_attempted_question.answer = attempted_question.answer
     db_attempted_question.is_correct = db_attempted_question.question.question == attempted_question.answer

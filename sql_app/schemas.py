@@ -66,7 +66,7 @@ class AttemptedStageProtected(AttemptedStageBase):
 
 class AttemptedStage(AttemptedStageBase):
     id: int
-    
+    stage: StageProtected
     attempted_questions: List[AttemptedQuestionProtected] # For Score page
     
     class Config:
@@ -84,7 +84,7 @@ class AttemptedQuestionUpdate(AttemptedQuestionBase):
 class AttemptedQuestion(AttemptedQuestionBase):
     id: int
     attempted_stage_id: int
-    attempted_stage: AttemptedStageProtected
+    attempted_stage: AttemptedStage
     question_id: int 
     question: Question
     
