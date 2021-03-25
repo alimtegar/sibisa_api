@@ -46,15 +46,15 @@ def create_attempted_stage(db: Session, attempted_stage: schemas.AttemptedStageC
                 attempted_stage_id = db_attempted_stage.id,
                 question_id = question.id)
                 for question in questions.all()]
-        db_attempted_questions_random = [
-            models.AttemptedQuestion(
-                attempted_stage_id = db_attempted_stage.id,
-                question_id = question.id)
-                for question in questions.all()]
+        # db_attempted_questions_random = [
+        #     models.AttemptedQuestion(
+        #         attempted_stage_id = db_attempted_stage.id,
+        #         question_id = question.id)
+        #         for question in questions.all()]
 
-        shuffle(db_attempted_questions_random)
+        shuffle(db_attempted_questions)
 
-        db_attempted_questions += db_attempted_questions_random
+        # db_attempted_questions += db_attempted_questions_random
                 
         # Create attempted test questions
         db.add_all(db_attempted_questions)
@@ -91,8 +91,6 @@ def update_attempted_question(db: Session, id: int, attempted_question: schemas.
     db.refresh(db_attempted_question)
 
     return db_attempted_question
-
-
 
 
 # def get_stage(db:Session, id: int, category: str):
