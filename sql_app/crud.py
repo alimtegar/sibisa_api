@@ -1,12 +1,10 @@
 from datetime import datetime, timedelta
-from logging import disable
-from typing import List, Optional
+from typing import Optional
 from random import shuffle
 
-from fastapi import Depends, HTTPException, status
+from fastapi import HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 
-from sqlalchemy import and_, or_, schema
 from sqlalchemy.orm import Session
 
 from passlib.context import CryptContext
@@ -14,9 +12,8 @@ from jose import JWTError, jwt
 
 from . import models, schemas
 
+
 # User
-
-
 # oauth2_scheme = OAuth2PasswordBearer(tokenUrl='token')
 pwd_context = CryptContext(schemes=['bcrypt'], deprecated='auto')
 
@@ -25,16 +22,6 @@ pwd_context = CryptContext(schemes=['bcrypt'], deprecated='auto')
 SECRET_KEY = '09d25e094faa6ca2556c818166b7a9563b93f7099f6f0f4caa6cf63b88e8d3e7'
 ALGORITHM = 'HS256'
 TOKEN_EXPIRE_MINUTES = 30
-
-fake_users_db = {
-    "johndoe": {
-        "username": "johndoe",
-        "full_name": "John Doe",
-        "email": "johndoe@example.com",
-        "hashed_password": "$2b$12$EixZaYVK1fsbw1ZfbX3OXePaWxn96p36WQoeG6Lruj3vjPGga31lW",
-        "disabled": False,
-    }
-}
 
 
 def verify_password(plain_password, hashed_password):
@@ -58,7 +45,7 @@ def create_token(data: dict, expires_delta: Optional[timedelta] = None):
 
 def get_user(db: Session, email: str):
     db_user = db.query(models.User).filter(models.User.email == email).first()
-    
+
     return schemas.UserProtected(email=db_user.email,
                                  name=db_user.name,
                                  is_active=db_user.is_active)
@@ -94,6 +81,7 @@ def get_logged_in_user(db: Session, token: str):
     if not user.is_active:
         raise HTTPException(status_code=400, detail='Inactive user')
     return user
+
 
 def get_token_with_form(db, form_data: OAuth2PasswordRequestForm):
     user = authenticate_user(

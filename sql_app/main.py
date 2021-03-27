@@ -1,6 +1,6 @@
 from typing import List
 
-from fastapi import FastAPI, Depends, Path, HTTPException
+from fastapi import FastAPI, Depends, Path
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic.schema import schema
@@ -14,23 +14,20 @@ models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
 
-origins = [
-    '*',
-    # 'http://localhost.tiangolo.com',
-    # 'https://localhost.tiangolo.com',
-    # 'http://localhost',
-    # 'http://localhost:8080',
-]
-
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
+    allow_origins=['*',
+                   # 'http://localhost.tiangolo.com',
+                   # # 'https://localhost.tiangolo.com',
+                   # 'http://localhost',
+                   # 'http://localhost:8080',
+                   ],
     allow_credentials=True,
     allow_methods=['*'],
     allow_headers=['*'],
 )
 
-# Depedency
+# Depedencies
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl='token')
 
 
@@ -40,8 +37,9 @@ def get_db():
         yield db
     finally:
         db.close()
+        
 
-
+# Routes
 # Home
 @app.get('/')
 def read_root():
