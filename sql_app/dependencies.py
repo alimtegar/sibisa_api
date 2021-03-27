@@ -1,14 +1,34 @@
+from fastapi import HTTPException, status
+from fastapi.param_functions import Depends
 from fastapi.security import OAuth2PasswordBearer
 
-from .database import SessionLocal
+from sqlalchemy.orm import Session
+
+from . import database, crud
 
 # Depedencies
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl='token')
 
 
 def get_db():
-    db = SessionLocal()
+    db = database.SessionLocal()
     try:
         yield db
     finally:
         db.close()
+
+
+def get_logged_in_user(db: Session = Depends(get_db), token: str = Depends(oauth2_scheme)):
+    decoded_token = crud.decode_token(token)
+    user = crud.get_user(db, email=decoded_token.email)
+
+    if not user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
+                            detail='User is not found',
+                            headers={'WWW-Authenticate': 'Bearer'})
+    if not user.is_active:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, 
+                            detail='User is inactive',
+                            headers={'WWW-Authenticate': 'Bearer'})
+
+    return user

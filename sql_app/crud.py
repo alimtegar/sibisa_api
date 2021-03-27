@@ -3,14 +3,14 @@ from typing import Optional
 from random import shuffle
 
 from fastapi import HTTPException, status
-from fastapi.security import OAuth2PasswordRequestForm
+from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 
 from sqlalchemy.orm import Session
 
 from passlib.context import CryptContext
 from jose import JWTError, jwt
 
-from . import models, schemas
+from . import dependencies, models, schemas
 
 
 # User
@@ -43,10 +43,30 @@ def create_token(data: dict, expires_delta: Optional[timedelta] = None):
     return encoded_jwt
 
 
+def decode_token(token: str):
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        email: str = payload.get('sub')
+
+        if email is None:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
+                                detail='Could not validate credentials',
+                                headers={'WWW-Authenticate': 'Bearer'})
+
+        decoded_token = schemas.TokenDecoded(email=email)
+
+        return decoded_token
+    except JWTError:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
+                            detail='Could not validate credentials',
+                            headers={'WWW-Authenticate': 'Bearer'})
+
+
 def get_user(db: Session, email: str):
     db_user = db.query(models.User).filter(models.User.email == email).first()
 
-    return schemas.UserProtected(email=db_user.email,
+    return schemas.UserProtected(id=db_user.id,
+                                 email=db_user.email,
                                  name=db_user.name,
                                  is_active=db_user.is_active)
 
@@ -58,28 +78,6 @@ def authenticate_user(db: Session, email: str, password: str):
         return False
     if not verify_password(password, user.password):
         return False
-    return user
-
-
-def get_logged_in_user(db: Session, token: str):
-    credentials_exception = HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail='Could not validate credentials',
-        headers={'WWW-Authenticate': 'Bearer'},
-    )
-    try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        email: str = payload.get('sub')
-        if email is None:
-            raise credentials_exception
-        token_data = schemas.TokenData(email=email)
-    except JWTError:
-        raise credentials_exception
-    user = get_user(db, email=token_data.email)
-    if user is None:
-        raise credentials_exception
-    if not user.is_active:
-        raise HTTPException(status_code=400, detail='Inactive user')
     return user
 
 
@@ -102,27 +100,37 @@ def get_token_with_form(db, form_data: OAuth2PasswordRequestForm):
 def get_token(db: Session, user: schemas.UserLogin):
     user = authenticate_user(
         db, user.email, user.password)
+
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail='Incorrect email or password',
             headers={'WWW-Authenticate': 'Bearer'},
         )
+
     if not user.is_active:
         raise HTTPException(status_code=400, detail='Inactive user')
+
     token_expires = timedelta(minutes=TOKEN_EXPIRE_MINUTES)
     token = create_token(
         data={'sub': user.email}, expires_delta=token_expires
     )
+
     return {'token': token, 'type': 'bearer'}
 
 
 def create_user(db: Session, user: schemas.UserRegister):
-    hashed_password = hash_password(user.password)
-    db_user = models.User(
-        email=user.email,
-        password=hashed_password,
-        name=user.name)
+    # Check if email is already registered or not
+    user = get_user(db, user.email)
+
+    if user:
+        raise HTTPException(
+            status_code=409, detail='Email is already registered')
+
+    # Hash password
+    user.password = hash_password(user.password)
+
+    db_user = models.User(**user.dict())
 
     db.add(db_user)
     db.commit()
@@ -134,20 +142,24 @@ def create_user(db: Session, user: schemas.UserRegister):
 
     return {'token': token, 'type': 'bearer'}
 
+
 # Stage
-
-
-def get_stages(db: Session, category: Optional[str] = None, skip: int = 0, limit: int = 100):
+def get_stages(db: Session, user: schemas.UserProtected, category: Optional[str] = None, skip: int = 0, limit: int = 100):
     db_stages = db.query(models.Stage)
 
     if category:
         db_stages = db_stages.filter(models.Stage.category == category)
 
-    return db_stages.offset(skip).limit(limit).all()
+    db_stages = db_stages.offset(skip).limit(limit).all()
+
+    if not db_stages:
+        raise HTTPException(
+            status_code=404, detail="Stages are not found")
+
+    return db_stages
+
 
 # Attempted Stage
-
-
 def get_attempted_stage(db: Session, id: int):
     db_attempted_stage = db.query(models.AttemptedStage).get(id)
 
@@ -158,14 +170,15 @@ def get_attempted_stage(db: Session, id: int):
     return db_attempted_stage
 
 
-def create_attempted_stage(db: Session, attempted_stage: schemas.AttemptedStageCreate, id: int):
+def create_attempted_stage(db: Session, user: schemas.UserProtected, attempted_stage: schemas.AttemptedStageCreate):
     questions = db.query(models.Question).filter(
         models.Question.stage_id == attempted_stage.stage_id)
 
     if questions.count() == 0:
         raise HTTPException(status_code=404, detail="Questions are empty")
 
-    db_attempted_stage = models.AttemptedStage(**attempted_stage.dict())
+    db_attempted_stage = models.AttemptedStage(
+        **attempted_stage.dict(), user_id=user.id)
 
     # Create attempted stage
     db.add(db_attempted_stage)
@@ -174,15 +187,9 @@ def create_attempted_stage(db: Session, attempted_stage: schemas.AttemptedStageC
 
     if db_attempted_stage.id:
         db_attempted_questions = [
-            models.AttemptedQuestion(
-                attempted_stage_id=db_attempted_stage.id,
-                question_id=question.id)
+            models.AttemptedQuestion(attempted_stage_id=db_attempted_stage.id,
+                                     question_id=question.id)
             for question in questions.all()]
-        # db_attempted_questions_random = [
-        #     models.AttemptedQuestion(
-        #         attempted_stage_id = db_attempted_stage.id,
-        #         question_id = question.id)
-        #         for question in questions.all()]
 
         shuffle(db_attempted_questions)
 
@@ -199,9 +206,8 @@ def create_attempted_stage(db: Session, attempted_stage: schemas.AttemptedStageC
         raise HTTPException(
             status_code=500, detail="Failed to create attempted stage")
 
+
 # Attempted Question
-
-
 def get_attempted_question(db: Session, id: int, n: int):
     db_attempted_questions = db.query(models.AttemptedQuestion).filter(
         models.AttemptedQuestion.attempted_stage_id == id)

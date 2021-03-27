@@ -20,10 +20,12 @@ class UserLogin(UserBase):
 
 
 class User(UserBase):
+    id: int
     password: str
 
 
 class UserProtected(UserBase):
+    id: int
     name: str
 
 
@@ -33,7 +35,7 @@ class Token(BaseModel):
     type: str
 
 
-class TokenData(BaseModel):
+class TokenDecoded(BaseModel):
     email: Optional[str] = None
 
 
@@ -96,7 +98,7 @@ class AttemptedQuestionProtected(AttemptedQuestionBase):
 
 class AttemptedStageBase(BaseModel):
     stage_id: int
-
+    
 
 class AttemptedStageCreate(AttemptedStageBase):
     pass
