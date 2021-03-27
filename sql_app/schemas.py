@@ -5,38 +5,46 @@ from pydantic import BaseModel, Field
 
 
 # User
-class User(BaseModel):
-    username: str
-    email: Optional[str] = None
-    full_name: Optional[str] = None
-    disabled: Optional[bool] = None
+class UserBase(BaseModel):
+    email: str
+    is_active: Optional[bool] = None
 
-class UserCreate(User):
+
+class UserRegister(UserBase):
+    name: str
     password: str
 
-class UserInDB(User):
-    hashed_password: str
+
+class UserLogin(UserBase):
+    password: str
 
 
+class User(UserBase):
+    password: str
+
+
+class UserProtected(UserBase):
+    name: str
+
+
+# Token
 class Token(BaseModel):
-    access_token: str
-    token_type: str
+    token: str
+    type: str
 
 
 class TokenData(BaseModel):
-    username: Optional[str] = None
+    email: Optional[str] = None
+
 
 # Category
-
-
 class Category(str, Enum):
     symbols = 'symbols'
     letters = 'letters'
     numbers = 'numbers'
 
+
 # Question
-
-
 class QuestionBase(BaseModel):
     question: str
 
@@ -48,13 +56,11 @@ class Question(QuestionBase):
     class Config:
         orm_mode = True
 
+
 # Stage
-
-
 class StageBase(BaseModel):
     stage: str
     category: Category
-    question_count: int
 
 
 class StageProtected(StageBase):
@@ -73,9 +79,8 @@ class Stage(StageBase):
         orm_mode = True
         # use_enum_values = True
 
+
 # Attempted Stage
-
-
 class AttemptedQuestionBase(BaseModel):
     answer: Optional[str]       # Updatable
 
@@ -90,7 +95,6 @@ class AttemptedQuestionProtected(AttemptedQuestionBase):
 
 
 class AttemptedStageBase(BaseModel):
-    score: Optional[int]
     stage_id: int
 
 
@@ -113,9 +117,8 @@ class AttemptedStage(AttemptedStageBase):
     class Config:
         orm_mode = True
 
+
 # Attempted Question
-
-
 class AttemptedQuestionCreate(AttemptedQuestionBase):
     attempted_stage_id: int
     question_id: int

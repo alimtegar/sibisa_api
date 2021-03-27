@@ -5,35 +5,34 @@ from sqlalchemy.orm import relationship
 from .database import Base
 from .schemas import Category
 
-# User
 
+# User
 class User(Base):
     __tablename__ = 'users'
-    
+
     id = Column(Integer, primary_key=True, index=True)
-    username = Column(String(16), unique=True, index=True)
-    full_name = Column(String(255))
     email = Column(String(255), unique=True, index=True)
-    hashed_password = Column(String(64))
-    disabled = Column(Boolean)
+    password = Column(String(64))
+    name = Column(String(255))
+    is_active = Column(Boolean)
+
+    attempted_stages = relationship(
+        'AttemptedStage', back_populates='user')
+
 
 # Stage
-
-
 class Stage(Base):
     __tablename__ = 'stages'
 
     id = Column(Integer, primary_key=True, index=True)
     stage = Column(Integer, index=True)
     category = Column(Enum(Category), index=True)
-    question_count = Column(Integer)
 
     questions = relationship('Question', back_populates='stage')
     attempted_stages = relationship('AttemptedStage', back_populates='stage')
 
+
 # Question
-
-
 class Question(Base):
     __tablename__ = 'questions'
 
@@ -45,23 +44,23 @@ class Question(Base):
     attempted_questions = relationship(
         'AttemptedQuestion', back_populates='question')
 
+
 # Attempted Stage
-
-
 class AttemptedStage(Base):
     __tablename__ = 'attempted_stages'
 
     id = Column(Integer, primary_key=True, index=True)
     stage_id = Column(Integer, ForeignKey('stages.id'))
-    score = Column(Integer, default=0)
+    user_id = Column(Integer, ForeignKey('users.id'))
 
     stage = relationship('Stage', back_populates='attempted_stages')
     attempted_questions = relationship(
         'AttemptedQuestion', back_populates='attempted_stage')
+    user = relationship(
+        'User', back_populates='attempted_stages')
+
 
 # Attempted Question
-
-
 class AttemptedQuestion(Base):
     __tablename__ = 'attempted_questions'
 
