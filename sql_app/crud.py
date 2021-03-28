@@ -3,14 +3,14 @@ from typing import Optional
 from random import shuffle
 
 from fastapi import HTTPException, status
-from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from fastapi.security import OAuth2PasswordRequestForm
 
 from sqlalchemy.orm import Session
 
 from passlib.context import CryptContext
 from jose import JWTError, jwt
 
-from . import dependencies, models, schemas
+from . import models, schemas
 
 
 # User
@@ -105,8 +105,7 @@ def get_token(db: Session, user: schemas.UserLogin):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail='Incorrect email or password',
-            headers={'WWW-Authenticate': 'Bearer'},
-        )
+            headers={'WWW-Authenticate': 'Bearer'})
 
     if not user.is_active:
         raise HTTPException(status_code=400, detail='Inactive user')
@@ -125,7 +124,8 @@ def create_user(db: Session, user: schemas.UserRegister):
 
     if user:
         raise HTTPException(
-            status_code=409, detail='Email is already registered')
+            status_code=status.HTTP_409_CONFLICT,
+            detail='Email is already registered')
 
     # Hash password
     user.password = hash_password(user.password)
@@ -153,19 +153,23 @@ def get_stages(db: Session, user: schemas.UserProtected, category: Optional[str]
     db_stages = db_stages.offset(skip).limit(limit).all()
 
     if not db_stages:
-        raise HTTPException(
-            status_code=404, detail="Stages are not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
+                            detail="Stages not found")
 
     return db_stages
 
 
 # Attempted Stage
-def get_attempted_stage(db: Session, id: int):
+def get_attempted_stage(db: Session, user: schemas.UserProtected, id: int):
     db_attempted_stage = db.query(models.AttemptedStage).get(id)
 
     if not db_attempted_stage:
-        raise HTTPException(
-            status_code=404, detail="Attempted stage is not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, 
+                            detail="Attempted stage not found")
+        
+    if db_attempted_stage.user_id != user.id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, 
+                            detail="Attempted stage does not belong to user")
 
     return db_attempted_stage
 
@@ -185,50 +189,55 @@ def create_attempted_stage(db: Session, user: schemas.UserProtected, attempted_s
     db.commit()
     # db.refresh(db_attempted_stage)
 
-    if db_attempted_stage.id:
-        db_attempted_questions = [
-            models.AttemptedQuestion(attempted_stage_id=db_attempted_stage.id,
-                                     question_id=question.id)
-            for question in questions.all()]
+    db_attempted_questions = [
+        models.AttemptedQuestion(attempted_stage_id=db_attempted_stage.id,
+                                    question_id=question.id)
+        for question in questions.all()]
 
-        shuffle(db_attempted_questions)
+    shuffle(db_attempted_questions)
 
-        # db_attempted_questions += db_attempted_questions_random
+    # db_attempted_questions += db_attempted_questions_random
 
-        # Create attempted test questions
-        db.add_all(db_attempted_questions)
-        db.commit()
-        # db.refresh(db_attempted_questions)
-        db.refresh(db_attempted_stage)
+    # Create attempted test questions
+    db.add_all(db_attempted_questions)
+    db.commit()
+    # db.refresh(db_attempted_questions)
+    db.refresh(db_attempted_stage)
 
-        return db_attempted_stage
-    else:
-        raise HTTPException(
-            status_code=500, detail="Failed to create attempted stage")
-
+    return db_attempted_stage
 
 # Attempted Question
-def get_attempted_question(db: Session, id: int, n: int):
+def get_attempted_question(db: Session, user: schemas.UserProtected, id: int, n: int):
     db_attempted_questions = db.query(models.AttemptedQuestion).filter(
         models.AttemptedQuestion.attempted_stage_id == id)
 
     if db_attempted_questions.count() < n:
         raise HTTPException(
-            status_code=404, detail="Attempted question is not found")
+            status_code=404, detail="Attempted question not found")
 
-    return db_attempted_questions[n-1]
+    db_attempted_question = db_attempted_questions[n-1]
+    
+    if db_attempted_question.attempted_stage.user_id != user.id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, 
+                            detail="Attempted question does not belong to user")
+
+    return db_attempted_question
 
 
-def update_attempted_question(db: Session, id: int, attempted_question: schemas.AttemptedQuestionUpdate):
+def update_attempted_question(db: Session, user: schemas.UserProtected, id: int, attempted_question: schemas.AttemptedQuestionUpdate):
     db_attempted_question = db.query(models.AttemptedQuestion).get(id)
 
     if not db_attempted_question:
-        raise HTTPException(
-            status_code=404, detail="Attempted question is not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, 
+                            detail="Attempted question not found")
+        
+    if db_attempted_question.attempted_stage.user_id != user.id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, 
+                            detail="Attempted question does not belong to user")
 
     if db_attempted_question.answer:
-        raise HTTPException(
-            status_code=423, detail="Attempted question answer cannot be changed if it has been answered")
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, 
+                            detail="Attempted question answer cannot be changed if it has been answered")
 
     db_attempted_question.answer = attempted_question.answer
     db_attempted_question.is_correct = db_attempted_question.question.question == attempted_question.answer

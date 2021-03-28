@@ -28,8 +28,6 @@ def read_user(user: schemas.UserLogin, db: Session = Depends(dependencies.get_db
     return token
 
 @router.get('/profile', response_model=schemas.UserProtected)
-def read_logged_in_user(db: Session = Depends(dependencies.get_db)):
-    logged_in_user = crud.get_logged_in_user(db)
-
-    return logged_in_user
+def read_logged_in_user(user: schemas.UserProtected = Depends(dependencies.get_logged_in_user)):
+    return user
   
