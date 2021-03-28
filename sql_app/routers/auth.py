@@ -31,3 +31,6 @@ def read_user(user: schemas.UserLogin, db: Session = Depends(dependencies.get_db
 def read_logged_in_user(user: schemas.UserProtected = Depends(dependencies.get_logged_in_user)):
     return user
   
+@router.get('/activate/{token}')
+def activate_user(token: str, db: Session = Depends(dependencies.get_db)):
+    return crud.activate_user(db, token)

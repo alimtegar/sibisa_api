@@ -50,7 +50,7 @@ def decode_token(token: str):
 
         if email is None:
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
-                                detail='Could not validate credentials',
+                                detail='Token is invalid',
                                 headers={'WWW-Authenticate': 'Bearer'})
 
         decoded_token = schemas.TokenDecoded(email=email)
@@ -58,7 +58,7 @@ def decode_token(token: str):
         return decoded_token
     except JWTError:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
-                            detail='Could not validate credentials',
+                            detail='Token is invalid',
                             headers={'WWW-Authenticate': 'Bearer'})
 
 
@@ -84,16 +84,19 @@ def authenticate_user(db: Session, email: str, password: str):
 def get_token_with_form(db, form_data: OAuth2PasswordRequestForm):
     user = authenticate_user(
         db, form_data.username, form_data.password)
+    
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail='Incorrect username or password',
+            detail='Username or password is incorrect',
             headers={'WWW-Authenticate': 'Bearer'},
         )
+        
     token_expires = timedelta(minutes=TOKEN_EXPIRE_MINUTES)
     token = create_token(
         data={'sub': user.username}, expires_delta=token_expires
     )
+    
     return {'token': token, 'type': 'bearer'}
 
 
@@ -104,11 +107,11 @@ def get_token(db: Session, user: schemas.UserLogin):
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail='Incorrect email or password',
+            detail='Username or password is incorrect',
             headers={'WWW-Authenticate': 'Bearer'})
 
     if not user.is_active:
-        raise HTTPException(status_code=400, detail='Inactive user')
+        raise HTTPException(status_code=400, detail='User is inactive')
 
     token_expires = timedelta(minutes=TOKEN_EXPIRE_MINUTES)
     token = create_token(
@@ -141,6 +144,29 @@ def create_user(db: Session, user: schemas.UserRegister):
     )
 
     return {'token': token, 'type': 'bearer'}
+
+def activate_user(db: Session, token: str):
+    decoded_token = decode_token(token)
+
+    db_user = db.query(models.User).filter(models.User.email == decoded_token.email).first()
+    
+    if not db_user:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
+                            detail='Token is invalid',
+                            headers={'WWW-Authenticate': 'Bearer'})
+    
+    if db_user.is_active:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
+                            detail='Token is invalid',
+                            headers={'WWW-Authenticate': 'Bearer'})
+        
+    
+    db_user.is_active = 1
+    
+    db.commit()
+    db.refresh(db_user)
+    
+    return db_user
 
 
 # Stage
