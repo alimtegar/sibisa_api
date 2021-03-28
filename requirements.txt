@@ -5,3 +5,7 @@ sqlalchemy
 mysqlclient
 pymysql
 a2wsgi
+python-multipart
+python-jose
+passlib
+bcrypt
