@@ -1,22 +1,33 @@
+from functools import lru_cache
+
 from fastapi import HTTPException, status
 from fastapi.param_functions import Depends
 from fastapi.security import OAuth2PasswordBearer
 
 from sqlalchemy.orm import Session
 
-from . import database, crud
+# Settings
+from . import config
 
-# Depedencies
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl='token')
+@lru_cache()
+def get_settings():
+    return config.Settings()
 
+# Database
+from . import database
 
-def get_db():
-    db = database.SessionLocal()
+async def get_db():
+    db = await database.SessionLocal()
+    
     try:
         yield db
     finally:
         db.close()
 
+# Token
+from . import crud
+
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl='token')
 
 def get_logged_in_user(db: Session = Depends(get_db), token: str = Depends(oauth2_scheme)):
     decoded_token = crud.decode_token(token)
@@ -32,3 +43,22 @@ def get_logged_in_user(db: Session = Depends(get_db), token: str = Depends(oauth
                             headers={'WWW-Authenticate': 'Bearer'})
 
     return user
+
+# Database
+from . import database
+
+def get_db():
+    db = database.SessionLocal()
+    
+    try:
+        yield db
+    finally:
+        db.close()
+        
+# Email
+from . import email
+
+def get_fm():
+    fm = email.fm
+    
+    return fm
