@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from .routers import auth, stages, attempted_stages, attempted_questions
+from .routers import user, stage, attempted_stage, attempted_question
 from .database import Base, engine
 
 Base.metadata.create_all(bind=engine)
@@ -21,10 +21,10 @@ app.add_middleware(
     allow_headers=['*'],
 )
 
-app.include_router(auth.router)
-app.include_router(stages.router)
-app.include_router(attempted_stages.router)
-app.include_router(attempted_questions.router)
+app.include_router(user.router)
+app.include_router(stage.router)
+app.include_router(attempted_stage.router)
+app.include_router(attempted_question.router)
 
 # Routes
 # Home
