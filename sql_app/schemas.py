@@ -18,6 +18,7 @@ class UserBase(BaseModel):
 class UserRegister(UserBase):
     name: str
     password: str
+    password_confirmation: str
 
 
 class UserLogin(UserBase):
@@ -31,7 +32,7 @@ class User(UserBase):
 
 class UserProtected(UserBase):
     id: int
-    name: str
+    name: str    
 
 
 # Token
@@ -42,6 +43,12 @@ class Token(BaseModel):
 
 class TokenDecoded(BaseModel):
     email: Optional[str] = None
+    
+    
+# Auth
+class Auth(BaseModel):
+    user: UserProtected
+    token: Token
 
 
 # Category
