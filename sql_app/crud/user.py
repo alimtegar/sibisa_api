@@ -1,7 +1,11 @@
+import shutil
+import os
+import uuid
+
 from datetime import datetime, timedelta
 from validate_email import validate_email
 
-from fastapi import HTTPException, status
+from fastapi import HTTPException, status, UploadFile
 from fastapi.security import OAuth2PasswordRequestForm
 from fastapi_mail import FastMail, MessageSchema
 
@@ -64,6 +68,7 @@ def get_user(db: Session, email: str):
     return schemas.UserProtected(id=db_user.id,
                                  email=db_user.email,
                                  name=db_user.name,
+                                 photo=db_user.photo,
                                  is_active=db_user.is_active)
 
 
@@ -120,6 +125,7 @@ def get_token(db: Session, user: schemas.UserLogin):
     return {'user': schemas.UserProtected(id=user.id,
                                           name=user.name,
                                           email=user.email,
+                                          photo=user.photo,
                                           is_active=user.is_active),
             'token': {'token': token,
                       'type': 'bearer'}}
@@ -200,6 +206,56 @@ def activate_user(db: Session, token: str):
     return {'user': schemas.UserProtected(id=db_user.id,
                                           name=db_user.name,
                                           email=db_user.email,
+                                          photo=db_user.photo,
                                           is_active=db_user.is_active),
             'token': {'token': token,
                       'type': 'bearer'}}
+
+
+def update_logged_in_user(db: Session, user: schemas.UserProtected, name: str, photo: UploadFile):
+    db_user = db.query(models.User).filter(
+        models.User.email == user.email).first()
+
+    filedir = os.path.join('sql_app', 'images')
+
+    # try:
+    #     os.mkdir(filedir)
+    # except Exception as e:
+    #     raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+    #                         detail='Terjadi kesalahan saat mengunggah foto profil')
+
+    # return {'filename': photo.filename}
+    
+    # Name validation
+    if (name):
+        db_user.name = name
+    else:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                            detail='Nama tidak boleh kosong')
+            
+    # Photo validation
+    if (photo):
+        allowed_content_types = ['image/jpeg', 'image/png', 'image/gif', 'image/svg+xml']
+        if photo.content_type not in allowed_content_types:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                            detail='Format file foto tidak didukung')
+        
+        _, fileext = os.path.splitext(photo.filename)
+        filename = uuid.uuid4().hex + fileext
+        file = os.path.join(filedir, filename)
+
+        with open(file, 'wb') as buffer:
+            shutil.copyfileobj(photo.file, buffer)
+            
+        db_user.photo = filename
+    else:
+        db_user.photo = None
+
+    db.commit()
+    db.refresh(db_user)
+
+    return schemas.UserProtected(id=db_user.id,
+                                 name=db_user.name,
+                                 email=db_user.email,
+                                 photo=db_user.photo,
+                                 is_active=db_user.is_active)

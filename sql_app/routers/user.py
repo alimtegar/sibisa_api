@@ -1,4 +1,6 @@
-from fastapi import APIRouter, Depends
+from typing import Optional
+
+from fastapi import APIRouter, Depends, File, UploadFile, Form
 from fastapi.security import OAuth2PasswordRequestForm
 
 from fastapi_mail import FastMail
@@ -42,6 +44,12 @@ def read_logged_in_user(user: schemas.UserProtected = Depends(dependencies.get_l
 def activate_user(token: str, db: Session = Depends(dependencies.get_db)):
     return crud.user.activate_user(db, token)
 
+
 @router.get('/validate-token', response_model=schemas.Auth)
-def read_logged_in_user(user: schemas.UserProtected = Depends(dependencies.get_logged_in_user)):
+def validate_token(user: schemas.UserProtected = Depends(dependencies.get_logged_in_user)):
     return crud.user.validate_token(user)
+
+
+@router.put('/profile')
+def update_logged_in_user(name: str = Form(...), photo: Optional[UploadFile] = File(None), db: Session = Depends(dependencies.get_db), user: schemas.UserProtected = Depends(dependencies.get_logged_in_user)):
+    return crud.user.update_logged_in_user(db, user, name, photo)
