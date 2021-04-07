@@ -9,6 +9,7 @@ from fastapi import HTTPException, status, UploadFile
 from fastapi.security import OAuth2PasswordRequestForm
 from fastapi_mail import FastMail, MessageSchema
 
+from sqlalchemy import and_
 from sqlalchemy.orm import Session
 
 from passlib.context import CryptContext
@@ -225,28 +226,29 @@ def update_logged_in_user(db: Session, user: schemas.UserProtected, name: str, p
     #                         detail='Terjadi kesalahan saat mengunggah foto profil')
 
     # return {'filename': photo.filename}
-    
+
     # Name validation
     if (name):
         db_user.name = name
     else:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
-                            detail='Nama tidak boleh kosong')
-            
+                            detail='Nama tidak boleh kosong.')
+
     # Photo validation
     if (photo):
-        allowed_content_types = ['image/jpeg', 'image/png', 'image/gif', 'image/svg+xml']
+        allowed_content_types = ['image/jpeg',
+                                 'image/png', 'image/gif', 'image/svg+xml']
         if photo.content_type not in allowed_content_types:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
-                            detail='Format file foto tidak didukung')
-        
+                                detail='Format file foto tidak didukung.')
+
         _, fileext = os.path.splitext(photo.filename)
         filename = uuid.uuid4().hex + fileext
         file = os.path.join(filedir, filename)
 
         with open(file, 'wb') as buffer:
             shutil.copyfileobj(photo.file, buffer)
-            
+
         db_user.photo = filename
     else:
         db_user.photo = None
@@ -259,3 +261,24 @@ def update_logged_in_user(db: Session, user: schemas.UserProtected, name: str, p
                                  email=db_user.email,
                                  photo=db_user.photo,
                                  is_active=db_user.is_active)
+
+
+def update_user_password(db: Session, user: schemas.UserProtected, user_change_password: schemas.UserChangePassword):
+    db_user = db.query(models.User).filter(
+        and_(models.User.email == user.email, models.User.password == user_change_password.current_password)).first()
+    
+    if not db_user:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
+                            detail='Kata sandi sekarang salah.')
+        
+    if user_change_password.new_password != user_change_password.new_password_confirmation:
+        raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail='Kata sandi baru tidak cocok.')        
+        
+    db_user.password = user_change_password.new_password
+    
+    db.commit()
+    db.refresh(db_user)
+
+    return {'detail': 'Kata sandi berhasil diubah.'}

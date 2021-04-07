@@ -31,6 +31,11 @@ class User(UserBase):
 class UserProtected(UserBase):
     id: int
     name: str
+    
+class UserChangePassword(BaseModel):
+    current_password: str
+    new_password: str
+    new_password_confirmation: str
 
 
 # Token
