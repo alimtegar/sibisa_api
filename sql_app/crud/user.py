@@ -217,7 +217,8 @@ def update_logged_in_user(db: Session, user: schemas.UserProtected, name: str, p
     db_user = db.query(models.User).filter(
         models.User.email == user.email).first()
 
-    filedir = os.path.join('sql_app', 'images')
+    appdir = 'sql_app'
+    filedir = os.path.join('static', 'images')
 
     # try:
     #     os.mkdir(filedir)
@@ -236,22 +237,19 @@ def update_logged_in_user(db: Session, user: schemas.UserProtected, name: str, p
 
     # Photo validation
     if (photo):
-        allowed_content_types = ['image/jpeg',
-                                 'image/png', 'image/gif', 'image/svg+xml']
+        allowed_content_types = ['image/jpeg', 'image/png', 'image/gif', 'image/svg+xml']
         if photo.content_type not in allowed_content_types:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
                                 detail='Format file foto tidak didukung.')
 
         _, fileext = os.path.splitext(photo.filename)
         filename = uuid.uuid4().hex + fileext
-        file = os.path.join(filedir, filename)
+        file = os.path.join(appdir, filedir, filename)
 
         with open(file, 'wb') as buffer:
             shutil.copyfileobj(photo.file, buffer)
 
-        db_user.photo = filename
-    else:
-        db_user.photo = None
+        db_user.photo = os.path.join(filedir, filename)
 
     db.commit()
     db.refresh(db_user)
