@@ -14,6 +14,7 @@ class User(Base):
     email = Column(String(255), unique=True, index=True)
     password = Column(String(64))
     name = Column(String(255))
+    photo = Column(String(255))
     is_active = Column(Boolean)
 
     attempted_stages = relationship(

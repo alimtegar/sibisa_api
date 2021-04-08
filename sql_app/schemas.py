@@ -3,21 +3,19 @@ from typing import List, Optional
 
 from pydantic import BaseModel, EmailStr
 
-
-# Email
-class EEmail(BaseModel):
-   email: List[EmailStr]
-
-
 # User
+
+
 class UserBase(BaseModel):
     email: str
+    photo: Optional[str] = None
     is_active: Optional[bool] = None
 
 
 class UserRegister(UserBase):
     name: str
     password: str
+    password_confirmation: str
 
 
 class UserLogin(UserBase):
@@ -26,12 +24,18 @@ class UserLogin(UserBase):
 
 class User(UserBase):
     id: int
+    name: str
     password: str
 
 
 class UserProtected(UserBase):
     id: int
     name: str
+    
+class UserChangePassword(BaseModel):
+    current_password: str
+    new_password: str
+    new_password_confirmation: str
 
 
 # Token
@@ -42,6 +46,12 @@ class Token(BaseModel):
 
 class TokenDecoded(BaseModel):
     email: Optional[str] = None
+
+
+# Auth
+class Auth(BaseModel):
+    user: UserProtected
+    token: Token
 
 
 # Category
@@ -95,7 +105,7 @@ class AttemptedQuestionBase(BaseModel):
 class AttemptedQuestionProtected(AttemptedQuestionBase):
     id: int
     is_correct: Optional[bool]
-    question: Question
+    # question: Question
 
     class Config:
         orm_mode = True
@@ -103,14 +113,16 @@ class AttemptedQuestionProtected(AttemptedQuestionBase):
 
 class AttemptedStageBase(BaseModel):
     stage_id: int
-    
+
 
 class AttemptedStageCreate(AttemptedStageBase):
     pass
 
 
 class AttemptedStageProtected(AttemptedStageBase):
+    id: int
     stage: StageProtected
+    attempted_questions: List[AttemptedQuestionProtected]  # For Score page
 
     class Config:
         orm_mode = True
@@ -118,7 +130,7 @@ class AttemptedStageProtected(AttemptedStageBase):
 
 class AttemptedStage(AttemptedStageBase):
     id: int
-    stage: StageProtected
+    stage: Stage
     attempted_questions: List[AttemptedQuestionProtected]  # For Score page
 
     class Config:

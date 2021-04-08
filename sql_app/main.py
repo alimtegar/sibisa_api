@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
 from .routers import user, stage, attempted_stage, attempted_question
 from .database import Base, engine
@@ -25,6 +26,8 @@ app.include_router(user.router)
 app.include_router(stage.router)
 app.include_router(attempted_stage.router)
 app.include_router(attempted_question.router)
+
+app.mount('/static', StaticFiles(directory='sql_app/static'), name='static')
 
 # Routes
 # Home
