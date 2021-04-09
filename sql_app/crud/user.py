@@ -237,7 +237,8 @@ def update_user(db: Session, logged_in_user: schemas.UserProtected, name: str, p
 
     # Photo validation
     if (photo):
-        allowed_content_types = ['image/jpeg', 'image/png', 'image/gif', 'image/svg+xml']
+        allowed_content_types = ['image/jpeg',
+                                 'image/png', 'image/gif', 'image/svg+xml']
         if photo.content_type not in allowed_content_types:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
                                 detail='Format file foto tidak didukung.')
@@ -262,21 +263,20 @@ def update_user(db: Session, logged_in_user: schemas.UserProtected, name: str, p
 
 
 def update_user_password(db: Session, logged_in_user: schemas.UserProtected, user: schemas.UserChangePassword):
-    # hashed_password = hash_password(user.current_password)
     db_user = db.query(models.User).filter(
         models.User.email == logged_in_user.email).first()
-    
+
     if not verify_password(user.current_password, db_user.password):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
                             detail='Kata sandi sekarang salah.')
-        
+
     if user.new_password != user.new_password_confirmation:
         raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail='Kata sandi baru tidak cocok.')        
-        
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail='Kata sandi baru tidak cocok.')
+
     db_user.password = hash_password(user.new_password)
-    
+
     db.commit()
     db.refresh(db_user)
 
