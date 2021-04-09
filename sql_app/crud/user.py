@@ -73,36 +73,36 @@ def get_user(db: Session, email: str):
                                  is_active=db_user.is_active)
 
 
-def validate_token(user: schemas.UserProtected):
-    token = create_token(data={'sub': user.email})
+def validate_token(logged_in_user: schemas.UserProtected):
+    token = create_token(data={'sub': logged_in_user.email})
 
-    return {'user': user,
+    return {'user': logged_in_user,
             'token': {'token': token,
                       'type': 'bearer'}}
 
 
 def authenticate_user(db: Session, email: str, password: str):
-    user = db.query(models.User).filter(
+    db_user = db.query(models.User).filter(
         models.User.email == email).first()
-    if not user:
+    if not db_user:
         return False
-    if not verify_password(password, user.password):
+    if not verify_password(password, db_user.password):
         return False
-    return user
+    return db_user
 
 
 def get_token_with_form(db, form_data: OAuth2PasswordRequestForm):
-    user = authenticate_user(
+    db_user = authenticate_user(
         db, form_data.email, form_data.password)
 
-    if not user:
+    if not db_user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail='Email atau kata sandi salah.',
             headers={'WWW-Authenticate': 'Bearer'},
         )
 
-    token = create_token(data={'sub': user.email})
+    token = create_token(data={'sub': db_user.email})
 
     return {'token': token, 'type': 'bearer'}
 
@@ -213,9 +213,9 @@ def activate_user(db: Session, token: str):
                       'type': 'bearer'}}
 
 
-def update_logged_in_user(db: Session, user: schemas.UserProtected, name: str, photo: UploadFile):
+def update_user(db: Session, logged_in_user: schemas.UserProtected, name: str, photo: UploadFile):
     db_user = db.query(models.User).filter(
-        models.User.email == user.email).first()
+        models.User.email == logged_in_user.email).first()
 
     appdir = 'sql_app'
     filedir = os.path.join('static', 'images')
@@ -261,20 +261,21 @@ def update_logged_in_user(db: Session, user: schemas.UserProtected, name: str, p
                                  is_active=db_user.is_active)
 
 
-def update_user_password(db: Session, user: schemas.UserProtected, user_change_password: schemas.UserChangePassword):
+def update_user_password(db: Session, logged_in_user: schemas.UserProtected, user: schemas.UserChangePassword):
+    # hashed_password = hash_password(user.current_password)
     db_user = db.query(models.User).filter(
-        and_(models.User.email == user.email, models.User.password == user_change_password.current_password)).first()
+        models.User.email == logged_in_user.email).first()
     
-    if not db_user:
+    if not verify_password(user.current_password, db_user.password):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
                             detail='Kata sandi sekarang salah.')
         
-    if user_change_password.new_password != user_change_password.new_password_confirmation:
+    if user.new_password != user.new_password_confirmation:
         raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail='Kata sandi baru tidak cocok.')        
         
-    db_user.password = user_change_password.new_password
+    db_user.password = hash_password(user.new_password)
     
     db.commit()
     db.refresh(db_user)

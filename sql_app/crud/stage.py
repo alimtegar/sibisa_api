@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 from .. import models, schemas
 
 # Stage
-def get_stages(db: Session, user: schemas.UserProtected, category: Optional[str] = None, skip: int = 0, limit: int = 100):
+def get_stages(db: Session, logged_in_user: schemas.UserProtected, category: Optional[str] = None, skip: int = 0, limit: int = 100):
     db_stages = db.query(models.Stage)
 
     if category:

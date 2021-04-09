@@ -7,21 +7,21 @@ from sqlalchemy.orm import Session
 from .. import models, schemas
 
 # Attempted Stage
-def get_attempted_stage(db: Session, user: schemas.UserProtected, id: int):
+def get_attempted_stage(db: Session, logged_in_user: schemas.UserProtected, id: int):
     db_attempted_stage = db.query(models.AttemptedStage).get(id)
 
     if not db_attempted_stage:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
                             detail="Attempted stage not found")
 
-    if db_attempted_stage.user_id != user.id:
+    if db_attempted_stage.user_id != logged_in_user.id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,
                             detail="Attempted stage does not belong to user")
 
     return db_attempted_stage
 
 
-def create_attempted_stage(db: Session, user: schemas.UserProtected, attempted_stage: schemas.AttemptedStageCreate):
+def create_attempted_stage(db: Session, logged_in_user: schemas.UserProtected, attempted_stage: schemas.AttemptedStageCreate):
     questions = db.query(models.Question).filter(
         models.Question.stage_id == attempted_stage.stage_id)
 
@@ -29,7 +29,7 @@ def create_attempted_stage(db: Session, user: schemas.UserProtected, attempted_s
         raise HTTPException(status_code=404, detail="Questions are empty")
 
     db_attempted_stage = models.AttemptedStage(
-        **attempted_stage.dict(), user_id=user.id)
+        **attempted_stage.dict(), user_id=logged_in_user.id)
 
     # Create attempted stage
     db.add(db_attempted_stage)

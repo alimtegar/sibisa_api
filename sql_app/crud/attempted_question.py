@@ -6,7 +6,7 @@ from .. import models, schemas
 
 
 # Attempted Question
-def get_attempted_question(db: Session, user: schemas.UserProtected, id: int, n: int):
+def get_attempted_question(db: Session, logged_in_user: schemas.UserProtected, id: int, n: int):
     db_attempted_questions = db.query(models.AttemptedQuestion).filter(
         models.AttemptedQuestion.attempted_stage_id == id)
 
@@ -16,7 +16,7 @@ def get_attempted_question(db: Session, user: schemas.UserProtected, id: int, n:
 
     db_attempted_question = db_attempted_questions[n-1]
 
-    if db_attempted_question.attempted_stage.user_id != user.id:
+    if db_attempted_question.attempted_stage.user_id != logged_in_user.id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,
                             detail="Attempted question does not belong to user")
 
