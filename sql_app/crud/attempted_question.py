@@ -38,10 +38,20 @@ def update_attempted_question(db: Session, user: schemas.UserProtected, id: int,
         raise HTTPException(status_code=status.HTTP_409_CONFLICT,
                             detail="Attempted question answer cannot be changed if it has been answered")
 
+
+    is_correct = db_attempted_question.question.question == attempted_question.answer
+
     db_attempted_question.answer = attempted_question.answer
-    db_attempted_question.is_correct = db_attempted_question.question.question == attempted_question.answer
+    db_attempted_question.is_correct = is_correct
 
     db.commit()
+    
+    if (is_correct):
+        db_attempted_stage = db.query(models.AttemptedStage).get(db_attempted_question.attempted_stage_id)
+        db_attempted_stage.score += 1 / db_attempted_stage.question_count * 100
+        
+        db.commit()
+        
     db.refresh(db_attempted_question)
 
     return db_attempted_question

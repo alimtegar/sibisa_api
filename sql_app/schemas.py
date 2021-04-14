@@ -132,6 +132,8 @@ class AttemptedStage(AttemptedStageBase):
     id: int
     stage: Stage
     attempted_questions: List[AttemptedQuestionProtected]  # For Score page
+    score: int
+    question_count: int
 
     class Config:
         orm_mode = True

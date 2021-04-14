@@ -53,6 +53,8 @@ class AttemptedStage(Base):
     id = Column(Integer, primary_key=True, index=True)
     stage_id = Column(Integer, ForeignKey('stages.id'))
     user_id = Column(Integer, ForeignKey('users.id'))
+    score = Column(Integer, default=0)
+    question_count = Column(Integer)
 
     stage = relationship('Stage', back_populates='attempted_stages')
     attempted_questions = relationship(

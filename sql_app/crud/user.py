@@ -9,7 +9,6 @@ from fastapi import HTTPException, status, UploadFile
 from fastapi.security import OAuth2PasswordRequestForm
 from fastapi_mail import FastMail, MessageSchema
 
-from sqlalchemy import and_
 from sqlalchemy.orm import Session
 
 from passlib.context import CryptContext

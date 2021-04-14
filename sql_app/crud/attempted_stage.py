@@ -2,11 +2,14 @@ from random import shuffle
 
 from fastapi import HTTPException, status
 
+from sqlalchemy import and_, func
 from sqlalchemy.orm import Session
 
 from .. import models, schemas
 
 # Attempted Stage
+
+
 def get_attempted_stage(db: Session, logged_in_user: schemas.UserProtected, id: int):
     db_attempted_stage = db.query(models.AttemptedStage).get(id)
 
@@ -21,6 +24,26 @@ def get_attempted_stage(db: Session, logged_in_user: schemas.UserProtected, id: 
     return db_attempted_stage
 
 
+def get_best_attempted_stage(db: Session, logged_in_user: schemas.UserProtected, category: str, stage: int):
+    db_stage = db.query(models.Stage).filter(
+        and_(models.Stage.category == category, models.Stage.stage == stage)).first()
+
+    if not db_stage:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
+                            detail="Stage not found")
+
+    user_id = logged_in_user.id
+    stage_id = db_stage.id
+
+    max_score = db.query(func.max(models.AttemptedStage.score)).filter(and_(
+        models.AttemptedStage.user_id == user_id, models.AttemptedStage.stage_id == stage_id))
+    
+    db_attempted_stage = db.query(models.AttemptedStage).filter(and_(
+        models.AttemptedStage.user_id == user_id, models.AttemptedStage.stage_id == stage_id, models.AttemptedStage.score == max_score)).first()
+
+    return db_attempted_stage
+
+
 def create_attempted_stage(db: Session, logged_in_user: schemas.UserProtected, attempted_stage: schemas.AttemptedStageCreate):
     questions = db.query(models.Question).filter(
         models.Question.stage_id == attempted_stage.stage_id)
@@ -29,7 +52,7 @@ def create_attempted_stage(db: Session, logged_in_user: schemas.UserProtected, a
         raise HTTPException(status_code=404, detail="Questions are empty")
 
     db_attempted_stage = models.AttemptedStage(
-        **attempted_stage.dict(), user_id=logged_in_user.id)
+        **attempted_stage.dict(), user_id=logged_in_user.id, question_count=questions.count())
 
     # Create attempted stage
     db.add(db_attempted_stage)
