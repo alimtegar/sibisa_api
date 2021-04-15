@@ -27,7 +27,7 @@ class Stage(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     stage = Column(Integer, index=True)
-    category = Column(Enum(Category), index=True)
+    category = Column(Enum(Category),index=True)
 
     questions = relationship('Question', back_populates='stage')
     attempted_stages = relationship('AttemptedStage', back_populates='stage')

@@ -24,6 +24,17 @@ def get_attempted_stage(db: Session, logged_in_user: schemas.UserProtected, id: 
     return db_attempted_stage
 
 
+def get_attempted_stages(db: Session, logged_in_user: schemas.UserProtected, skip: int = 0, limit: int = 100):
+    db_attempted_stages = db.query(models.AttemptedStage).order_by(models.AttemptedStage.id.desc()).filter(
+        models.AttemptedStage.user_id == logged_in_user.id).offset(skip).limit(limit).all()
+
+    if not db_attempted_stages:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
+                            detail="Attempted stages not found")
+
+    return db_attempted_stages
+
+
 def get_best_attempted_stage(db: Session, logged_in_user: schemas.UserProtected, category: str, stage: int):
     db_stage = db.query(models.Stage).filter(
         and_(models.Stage.category == category, models.Stage.stage == stage)).first()
@@ -37,7 +48,7 @@ def get_best_attempted_stage(db: Session, logged_in_user: schemas.UserProtected,
 
     max_score = db.query(func.max(models.AttemptedStage.score)).filter(and_(
         models.AttemptedStage.user_id == user_id, models.AttemptedStage.stage_id == stage_id))
-    
+
     db_attempted_stage = db.query(models.AttemptedStage).filter(and_(
         models.AttemptedStage.user_id == user_id, models.AttemptedStage.stage_id == stage_id, models.AttemptedStage.score == max_score)).first()
 

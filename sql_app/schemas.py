@@ -3,9 +3,18 @@ from typing import List, Optional
 
 from pydantic import BaseModel, EmailStr
 
+Category = Enum(
+    value='Category',
+    names=[
+        ('symbols', 'symbols'),
+        ('letters', 'letters'),
+        ('numbers', 'numbers'),
+        ('on-paper', 'on-paper'),
+    ]
+)
+
+
 # User
-
-
 class UserBase(BaseModel):
     email: str
     photo: Optional[str] = None
@@ -31,7 +40,8 @@ class User(UserBase):
 class UserProtected(UserBase):
     id: int
     name: str
-    
+
+
 class UserChangePassword(BaseModel):
     current_password: str
     new_password: str
@@ -53,15 +63,9 @@ class Auth(BaseModel):
     user: UserProtected
     token: Token
 
-
-# Category
-class Category(str, Enum):
-    symbols = 'symbols'
-    letters = 'letters'
-    numbers = 'numbers'
-
-
 # Question
+
+
 class QuestionBase(BaseModel):
     question: str
 
@@ -122,7 +126,9 @@ class AttemptedStageCreate(AttemptedStageBase):
 class AttemptedStageProtected(AttemptedStageBase):
     id: int
     stage: StageProtected
-    attempted_questions: List[AttemptedQuestionProtected]  # For Score page
+    score: int
+    question_count: int
+    # attempted_questions: List[AttemptedQuestionProtected]  # For Score page
 
     class Config:
         orm_mode = True
