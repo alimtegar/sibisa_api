@@ -85,7 +85,7 @@ class StageBase(BaseModel):
 
 
 class StageProtected(StageBase):
-    pass
+    id: int
 
     class Config:
         orm_mode = True
@@ -109,7 +109,7 @@ class AttemptedQuestionBase(BaseModel):
 class AttemptedQuestionProtected(AttemptedQuestionBase):
     id: int
     is_correct: Optional[bool]
-    # question: Question
+    question: Question
 
     class Config:
         orm_mode = True
@@ -136,7 +136,7 @@ class AttemptedStageProtected(AttemptedStageBase):
 
 class AttemptedStage(AttemptedStageBase):
     id: int
-    stage: Stage
+    stage: StageProtected
     attempted_questions: List[AttemptedQuestionProtected]  # For Score page
     score: int
     question_count: int
